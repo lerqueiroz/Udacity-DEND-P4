@@ -16,6 +16,25 @@ def create_spark_session():
     return spark
 
 def process_song_data(spark, input_data, output_data):
+    # get filepath to song data file
+    song_data = "s3://udacity-dend/song_data/A/A/A/*"
+    
+    # defined schema
+    schema_song = StructType([
+    StructField("artist_id", StringType(), True),
+    StructField("artist_latitude", DoubleType(), True),
+    StructField("artist_location", StringType(), True),
+    StructField("artist_longitude", DoubleType(), True),
+    StructField("artist_name", StringType(), True),
+    StructField("duration", DoubleType(), True),
+    StructField("num_songs", LongType(), True),
+    StructField("song_id", StringType(), True),
+    StructField("title", StringType(), True), 
+    StructField("year", LongType(), True)
+    ])
+    
+    # read song data file
+    df_song = spark.read.json(song_data, schema=schema_song)
 
 def process_log_data(spark, input_data, output_data):
 
