@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 import configparser
 import os
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, LongType
 
 config = configparser.ConfigParser()
 config.read('dl.cfg')
