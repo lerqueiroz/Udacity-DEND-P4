@@ -1,7 +1,11 @@
-from pyspark.sql import SparkSession
 import configparser
+from datetime import datetime
 import os
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import udf, col, monotonically_increasing_id
+from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, LongType
+
 
 config = configparser.ConfigParser()
 config.read('dl.cfg')
@@ -9,14 +13,28 @@ config.read('dl.cfg')
 os.environ['AWS_ACCESS_KEY_ID']=config['AWS_ACCESS_KEY_ID']
 os.environ['AWS_SECRET_ACCESS_KEY']=config['AWS_SECRET_ACCESS_KEY']
 
+
 def create_spark_session():
+    """Create a Spark framework session object
+
+    """
     spark = SparkSession \
         .builder \
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0") \
         .getOrCreate()
     return spark
 
+
 def process_song_data(spark, input_data, output_data):
+    """ETL - Read Json files (song data), transform it and then save it on disk\
+    in Parquet format
+
+    Args:
+        spark (PySpark object): PySpark object
+        input_data (string): source json files
+        output_data (string): destination Parquet files
+
+    """
     # get filepath to song data file
     song_data = "s3://udacity-dend/song_data/A/A/A/*"
     
@@ -56,13 +74,22 @@ def process_song_data(spark, input_data, output_data):
     df_song.artist_location.alias("location"),
     df_song.artist_latitude.alias("latitude"),
     df_song.artist_longitude.alias("longitude")).dropDuplicates()
-	
-	# write artists table to parquet files
+    
+    # write artists table to parquet files
     artists_table.write.partitionBy("artist_id").format("parquet")\
     .save(output_data.join("artists/artists_table.parquet"))
-	
-def process_log_data(spark, input_data, output_data):
 
+
+def process_log_data(spark, input_data, output_data):
+        """ETL - Read Json files (log data), transform it and then save it on disk\
+    in Parquet format
+
+    Args:
+        spark (PySpark object): PySpark object
+        input_data (string): source json files
+        output_data (string): destination Parquet files
+
+    """
     # get filepath to log data file
     log_data = input_data.join("log_data/2018/11/*")
 
@@ -90,8 +117,8 @@ def process_log_data(spark, input_data, output_data):
     
     # read log data file
     df_log = spark.read.json(log_data, schema=schema_log)
-	
-	# extract columns for users table    
+
+    # extract columns for users table    
     users_table = df_log.select(
     df_log.userId.alias("user_id"),
     df_log.firstName.alias("first_name"),
@@ -148,7 +175,8 @@ def process_log_data(spark, input_data, output_data):
     # write songplays table to parquet files partitioned by year and month
     songplays_table.write.partitionBy("year", "month").format("parquet")\
     .save(output_data.join("songplays/songplays_table.parquet"))
-	
+
+
 def main():
     spark = create_spark_session()
     input_data = "s3a://udacity-dend/"
